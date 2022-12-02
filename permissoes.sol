@@ -6,37 +6,38 @@ enum permissionLevel {Low, Medium, High}
 
 contract Permission {
 
-    uint256 public defaultDeltaTimeExpiration = 30 days;
+    uint public defaultDeltaTimeExpiration = 2 weeks;
+    mapping(address => Employer) public Account;
     address public owner;
-    event requestPermission(address requester, address destinyAccount, permissionLevel level );
+    event requestOwner(address requester, 
+                        address destinyAccount, 
+                        permissionLevel level);
 
     struct Employer {
         permissionLevel state;
         accountRole role;
-        uint256 timeExpiration;
+        uint timeExpiration;
     }
-
-    mapping(address => Employer) public Account;
 
     constructor(address _ower){
         Account[msg.sender] = Employer(permissionLevel.High,
                                        accountRole.Manager,
-                                       block.timestamp);
+                                       block.timestamp + defaultDeltaTimeExpiration);
         owner = _ower;
     }
 
-    function add(address account, uint256 role)public returns(bool) {
+    function add(address account, uint role) public returns(bool) {
         if(Account[msg.sender].role == accountRole.Manager) {
             Account[account] = Employer(permissionLevel.Low ,
                 accountRole(role),
-                block.timestamp
+                block.timestamp + defaultDeltaTimeExpiration
             );
             return true;
         }
         return false;
     }
 
-    function setMedium(address account)public returns(bool) {
+    function setMedium(address account) public returns(bool) {
         if(Account[msg.sender].role == accountRole.Manager) {
             Account[account].state = permissionLevel.Medium;
             Account[account].timeExpiration = block.timestamp + defaultDeltaTimeExpiration;
@@ -45,7 +46,7 @@ contract Permission {
         return false;
     }
 
-    function isMedium(address account)public view returns(bool){
+    function isMedium(address account) public view returns(bool){
         return Account[account].state >= permissionLevel.Medium 
         && Account[account].timeExpiration > block.timestamp;
     }
@@ -65,7 +66,7 @@ contract Permission {
             && Account[account].timeExpiration > block.timestamp;
     }
 
-    function setLow(address account)public returns(bool) {
+    function setLow(address account) public returns(bool) {
         if(Account[msg.sender].role == accountRole.Manager) {
             Account[account].state = permissionLevel.Low;
             Account[account].timeExpiration = block.timestamp ;
@@ -74,9 +75,9 @@ contract Permission {
         return false;
     }
     
-    function requestHighPermission(address account) public{
+    function requestOwnerRole(address account) external {
         if(Account[msg.sender].role == accountRole.Manager){
-            emit requestPermission(msg.sender,account,permissionLevel.High);
+            emit requestOwner(msg.sender,account,permissionLevel.High);
         }
     }
 }
